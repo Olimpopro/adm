@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "skills": {
+    "avinyc:web-design": {
+      "source": "aviflombaum/claude-code-in-avinyc",
+      "sourceType": "github",
+      "skillPath": "plugins/design-system/skills/web-design/SKILL.md",
+      "computedHash": "bba6a0df4bc2c07e87f2292064d7797a461d8a3982ca17d5d3730d63d1d1329e"
+    },
+    "frontend-design": {
+      "source": "anthropics/claude-code",
+      "sourceType": "github",
+      "skillPath": "plugins/frontend-design/skills/frontend-design/SKILL.md",
+      "computedHash": "e8118284a6365753790d44bb2758a6032b3af27fa84696428d9233f2be0f4e78"
+    },
+    "gsap-scrolltrigger": {
+      "source": "freshtechbro/claudedesignskills",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/gsap-scrolltrigger/SKILL.md",
+      "computedHash": "a084c870960fe6eea6090925245df29b942e627c65db446dfa60a5b9d1f4e834"
+    },
+    "motion-framer": {
+      "source": "freshtechbro/claudedesignskills",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/motion-framer/SKILL.md",
+      "computedHash": "16d7c6f24f1d1208500635331e0cf6e06555a44df461e6b1069e4ddb203fd737"
+    }
+  }
+}

@@ -56,21 +56,25 @@ npx skills add anthropics/claude-code --skill frontend-design
 
 > The widely shared command `npx skills add anthropics/claude-code-skill-frontend-design` points at a repo name that does not exist. Use the form above instead.
 
-### Animation Libraries
+### Animation: motion-framer + gsap-scrolltrigger
 
-High-performance motion with Framer Motion, GSAP, and Lottie, plus guidance on browser compatibility, accessibility (`prefers-reduced-motion`), and scroll-linked effects.
+High-performance motion with Framer Motion and GSAP ScrollTrigger, with `prefers-reduced-motion` handling baked in. From [`freshtechbro/claudedesignskills`](https://github.com/freshtechbro/claudedesignskills), a 23-skill repo focused on modern web animation and 3D.
 
 ```bash
-npx skillfish add itsimonfredlingjack/codex-dev-plugin animation-libraries
+npx skills add freshtechbro/claudedesignskills --skill motion-framer --skill gsap-scrolltrigger
 ```
+
+> The widely shared command `npx skillfish add itsimonfredlingjack/codex-dev-plugin animation-libraries` does not work. That repo exists but has no skill named `animation-libraries`. Use the command above instead.
 
 ### Web Design Architecture
 
 Mobile-first layout, WCAG accessibility, Tailwind conventions. From [`aviflombaum/claude-code-in-avinyc`](https://github.com/aviflombaum/claude-code-in-avinyc), a multi-skill repo.
 
 ```bash
-npx skillfish add aviflombaum/claude-code-in-avinyc web-design
+npx skills add aviflombaum/claude-code-in-avinyc --skill avinyc:web-design
 ```
+
+> Note the `avinyc:` namespace — without it, the installer reports "no matching skills found." All skills in this repo are namespaced.
 
 ---
 
