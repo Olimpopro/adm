@@ -1,1 +1,6 @@
 .agents/
+web/data/
+web/node_modules/
+web/.next/
+planta-source/
+*.pyc
