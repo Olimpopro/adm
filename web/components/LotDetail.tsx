@@ -114,7 +114,7 @@ export function LotDetail({ lot, onClose }: { lot: Lot; onClose: () => void }) {
                 <Spec label="Área total" value={`${lot.area} m²`} />
                 <Spec label="Frente" value={`${lot.frente} m`} />
                 <Spec label="Fundo" value={`${lot.fundo} m`} />
-                <Spec label="Orientação" value={orientationLabel(lot.orientation)} />
+                <Spec label="Quadra" value={lot.quadra} />
                 <Spec
                   label="Valor à vista"
                   value={brl.format(lot.price)}
@@ -377,6 +377,3 @@ function Dot() {
   );
 }
 
-function orientationLabel(o: string): string {
-  return { north: "Norte", south: "Sul", east: "Leste", west: "Oeste" }[o] ?? o;
-}

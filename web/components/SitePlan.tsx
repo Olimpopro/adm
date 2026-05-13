@@ -1,26 +1,36 @@
 "use client";
 
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import Image from "next/image";
 import {
   initialLots,
-  quadras,
+  PLANTA,
   brl,
-  SITE_VIEWBOX,
+  QUADRAS,
   type Lot,
   type LotStatus,
 } from "@/lib/lots";
 import { LotDetail } from "./LotDetail";
 
-type Props = {
-  /** optional override (when admin updates statuses, server passes the merged list) */
-  lots?: Lot[];
-};
+type Props = { lots?: Lot[] };
 
 const STATUS_LABEL: Record<LotStatus, string> = {
   available: "Disponível",
   reserved: "Reservado",
   sold: "Vendido",
+};
+
+const STATUS_COLOR: Record<LotStatus, string> = {
+  available: "rgba(165,230,53,0.42)",
+  reserved: "rgba(245,183,58,0.55)",
+  sold: "rgba(60,68,90,0.55)",
+};
+
+const STATUS_STROKE: Record<LotStatus, string> = {
+  available: "rgba(217,243,123,0.95)",
+  reserved: "rgba(245,183,58,1)",
+  sold: "rgba(107,113,135,0.9)",
 };
 
 export function SitePlan({ lots: lotsProp }: Props) {
@@ -29,32 +39,36 @@ export function SitePlan({ lots: lotsProp }: Props) {
   const [active, setActive] = useState<Lot | null>(null);
   const [pointer, setPointer] = useState({ x: 0, y: 0 });
   const [filter, setFilter] = useState<"all" | LotStatus>("all");
+  const [quadraFilter, setQuadraFilter] = useState<string>("all");
 
-  const filtered = useMemo(
-    () => (filter === "all" ? lots : lots.filter((l) => l.status === filter)),
-    [lots, filter],
-  );
+  const filtered = useMemo(() => {
+    return lots.filter((l) => {
+      if (filter !== "all" && l.status !== filter) return false;
+      if (quadraFilter !== "all" && l.quadra !== quadraFilter) return false;
+      return true;
+    });
+  }, [lots, filter, quadraFilter]);
 
-  const counts = useMemo(() => {
-    return {
+  const counts = useMemo(
+    () => ({
       total: lots.length,
       available: lots.filter((l) => l.status === "available").length,
       reserved: lots.filter((l) => l.status === "reserved").length,
       sold: lots.filter((l) => l.status === "sold").length,
-    };
-  }, [lots]);
+    }),
+    [lots],
+  );
 
-  // Close on Escape
   useEffect(() => {
     if (!active) return;
-    const handler = (e: KeyboardEvent) => {
+    const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setActive(null);
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [active]);
 
-  const onLotMove = useCallback((e: React.MouseEvent) => {
+  const onMove = useCallback((e: React.MouseEvent) => {
     setPointer({ x: e.clientX, y: e.clientY });
   }, []);
 
@@ -63,33 +77,37 @@ export function SitePlan({ lots: lotsProp }: Props) {
       id="planta"
       className="relative w-full px-6 md:px-12 py-24 md:py-32 bg-[var(--av-navy-950)] overflow-hidden"
     >
-      {/* Ambient atmosphere */}
       <div
         aria-hidden
-        className="absolute -top-40 -right-40 w-[60vw] h-[60vw] rounded-full blob"
-        style={{ background: "radial-gradient(circle, var(--av-lime-500) 0%, transparent 60%)" }}
+        className="absolute -top-40 -right-40 w-[55vw] h-[55vw] rounded-full blob"
+        style={{
+          background:
+            "radial-gradient(circle, var(--av-lime-500) 0%, transparent 60%)",
+        }}
       />
       <div
         aria-hidden
         className="absolute -bottom-60 -left-40 w-[55vw] h-[55vw] rounded-full blob"
-        style={{ background: "radial-gradient(circle, var(--av-navy-600) 0%, transparent 60%)" }}
+        style={{
+          background:
+            "radial-gradient(circle, var(--av-navy-600) 0%, transparent 60%)",
+        }}
       />
 
-      <div className="relative max-w-[1400px] mx-auto">
-        <div className="grid md:grid-cols-[1fr_auto] gap-6 md:gap-12 items-end mb-12 md:mb-16">
+      <div className="relative max-w-[1500px] mx-auto">
+        <div className="grid lg:grid-cols-[1fr_auto] gap-6 lg:gap-12 items-end mb-10 md:mb-14">
           <div>
             <span className="eyebrow">02 — Planta Interativa</span>
-            <h2 className="display mt-4 text-[clamp(2.4rem,5vw,4.5rem)] leading-[0.95] max-w-[18ch]">
-              Escolha seu lote <em>passeando</em> pelo bairro.
+            <h2 className="display mt-4 text-[clamp(2.4rem,5vw,4.5rem)] leading-[0.95] max-w-[20ch]">
+              A planta real, <em>navegável</em> lote por lote.
             </h2>
             <p className="mt-6 max-w-prose text-[var(--av-ink-300)] text-lg">
-              Cada quadrado abaixo é um lote real do AcquaVille. Passe o cursor
-              para ver área, frente e valor. Clique para abrir a ficha e
-              simular sua compra.
+              A imagem abaixo é a planta original do AcquaVille, registrada
+              em cartório. Passe o cursor sobre qualquer lote em verde para
+              ver os dados; clique para simular sua compra.
             </p>
           </div>
 
-          {/* Status filters */}
           <div className="flex flex-wrap gap-2">
             {(["all", "available", "reserved", "sold"] as const).map((k) => (
               <button
@@ -109,157 +127,124 @@ export function SitePlan({ lots: lotsProp }: Props) {
           </div>
         </div>
 
-        {/* The SVG */}
+        {/* Quadra chips */}
+        <div className="flex flex-wrap gap-1.5 mb-6">
+          <button
+            onClick={() => setQuadraFilter("all")}
+            className={`px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.18em] transition-colors ${
+              quadraFilter === "all"
+                ? "bg-[var(--av-cream-50)] text-[var(--av-navy-950)]"
+                : "bg-[var(--av-navy-900)] text-[var(--av-ink-300)] hover:text-[var(--av-cream-50)]"
+            }`}
+          >
+            Todas as quadras
+          </button>
+          {QUADRAS.map((q) => (
+            <button
+              key={q}
+              onClick={() => setQuadraFilter(quadraFilter === q ? "all" : q)}
+              className={`px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.18em] transition-colors ${
+                quadraFilter === q
+                  ? "bg-[var(--av-cream-50)] text-[var(--av-navy-950)]"
+                  : "bg-[var(--av-navy-900)] text-[var(--av-ink-300)] hover:text-[var(--av-cream-50)]"
+              }`}
+            >
+              {q}
+            </button>
+          ))}
+        </div>
+
+        {/* Planta canvas */}
         <div
-          className="relative w-full rounded-3xl border border-[var(--av-navy-800)] bg-gradient-to-br from-[var(--av-navy-900)] to-[var(--av-navy-950)] p-4 md:p-8 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)]"
-          onMouseMove={onLotMove}
+          className="relative w-full rounded-3xl border border-[var(--av-navy-800)] bg-[var(--av-cream-50)] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)] overflow-hidden"
+          onMouseMove={onMove}
           onMouseLeave={() => setHover(null)}
         >
-          <svg
-            viewBox={`0 0 ${SITE_VIEWBOX.width} ${SITE_VIEWBOX.height}`}
-            className="w-full h-auto"
-            role="img"
-            aria-label="Planta interativa do AcquaVille Residencial"
+          <div
+            className="relative w-full"
+            style={{ aspectRatio: PLANTA.aspectRatio }}
           >
-            {/* Background streets */}
-            <defs>
-              <pattern id="hatch" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
-                <line x1="0" y1="0" x2="0" y2="6" stroke="#7a8294" strokeWidth="1" opacity="0.18" />
-              </pattern>
-              <radialGradient id="rotunda" cx="50%" cy="50%">
-                <stop offset="0%" stopColor="#a5e635" stopOpacity="0.4" />
-                <stop offset="60%" stopColor="#a5e635" stopOpacity="0.1" />
-                <stop offset="100%" stopColor="transparent" />
-              </radialGradient>
-            </defs>
+            {/* Real planta as background */}
+            <Image
+              src={PLANTA.src}
+              alt="Planta do AcquaVille Residencial"
+              fill
+              priority
+              sizes="(max-width: 1400px) 100vw, 1400px"
+              className="object-contain"
+            />
 
-            {/* Street network (rough) */}
-            <g stroke="#2a3148" strokeWidth="2" fill="none">
-              {/* Vertical spine on the leg */}
-              <rect x="270" y="80" width="38" height="340" fill="#13182b" stroke="none" />
-              {/* Horizontal main avenue */}
-              <rect x="270" y="420" width="700" height="22" fill="#13182b" stroke="none" />
-              {/* Vertical between Q-09 and Q-08 */}
-              <rect x="600" y="240" width="22" height="200" fill="#13182b" stroke="none" />
-              <rect x="740" y="240" width="22" height="200" fill="#13182b" stroke="none" />
-              {/* Vertical between south quadras */}
-              <rect x="600" y="560" width="22" height="180" fill="#13182b" stroke="none" />
-              <rect x="740" y="560" width="22" height="180" fill="#13182b" stroke="none" />
-              {/* Avenue around rotunda */}
-              <rect x="270" y="540" width="700" height="22" fill="#13182b" stroke="none" />
-              {/* BA-172 frontage */}
-              <rect x="270" y="780" width="700" height="20" fill="#13182b" stroke="none" />
-            </g>
-
-            {/* Rotunda */}
-            <g>
-              <circle cx="690" cy="540" r="42" fill="url(#rotunda)" />
-              <circle cx="690" cy="540" r="22" fill="#0a1535" stroke="#a5e635" strokeWidth="1" />
-              <circle cx="690" cy="540" r="8" fill="#a5e635" opacity="0.7" />
-              <text
-                x="690"
-                y="610"
-                textAnchor="middle"
-                fill="#a5e635"
-                fontSize="11"
-                letterSpacing="3"
-                fontFamily="var(--font-jakarta)"
-              >
-                ROTUNDA
-              </text>
-            </g>
-
-            {/* BA-172 label */}
-            <g>
-              <line
-                x1="270"
-                y1="828"
-                x2="970"
-                y2="828"
-                stroke="#a5e635"
-                strokeWidth="0.6"
-                strokeDasharray="4 6"
-                opacity="0.5"
-              />
-              <text
-                x="620"
-                y="850"
-                textAnchor="middle"
-                fill="#a5acbf"
-                fontSize="10"
-                letterSpacing="6"
-                fontFamily="var(--font-jakarta)"
-              >
-                RODOVIA  BA-172
-              </text>
-            </g>
-
-            {/* Lots */}
-            {filtered.map((lot, i) => {
-              const isVisible =
-                filter === "all" || lot.status === filter;
-              const opacity = isVisible ? 1 : 0.08;
-              return (
-                <motion.rect
+            {/* Hotspot layer */}
+            <div className="absolute inset-0">
+              {filtered.map((lot, i) => (
+                <motion.button
                   key={lot.id}
-                  initial={{ opacity: 0, scale: 0.6 }}
-                  animate={{ opacity, scale: 1 }}
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: 1, scale: 1 }}
                   transition={{
-                    duration: 0.45,
-                    delay: Math.min(i * 0.004, 0.6),
+                    duration: 0.35,
+                    delay: Math.min(i * 0.003, 0.5),
                     ease: [0.22, 1, 0.36, 1],
                   }}
-                  x={lot.x}
-                  y={lot.y}
-                  width={lot.w - 2}
-                  height={lot.h - 2}
-                  rx={2}
-                  className={`lot-${lot.status}`}
+                  whileHover={{ scale: 1.08, zIndex: 10 }}
+                  style={{
+                    left: `${lot.x * 100}%`,
+                    top: `${lot.y * 100}%`,
+                    width: `${lot.w * 100}%`,
+                    height: `${lot.h * 100}%`,
+                    background: STATUS_COLOR[lot.status],
+                    border: `1.5px solid ${STATUS_STROKE[lot.status]}`,
+                    transformOrigin: "center",
+                  }}
                   onMouseEnter={() => setHover(lot)}
                   onMouseLeave={() => setHover((h) => (h?.id === lot.id ? null : h))}
-                  onClick={() =>
-                    lot.status !== "sold" ? setActive(lot) : null
-                  }
+                  onClick={() => (lot.status !== "sold" ? setActive(lot) : null)}
+                  disabled={lot.status === "sold"}
+                  className={`absolute rounded-[3px] cursor-pointer transition-colors duration-300 hover:brightness-110 ${
+                    lot.status === "available"
+                      ? "hover:shadow-[0_0_18px_rgba(165,230,53,0.7)]"
+                      : ""
+                  } ${lot.status === "sold" ? "cursor-not-allowed" : ""}`}
+                  aria-label={`Lote ${lot.id} — ${STATUS_LABEL[lot.status]}`}
                 />
-              );
-            })}
+              ))}
+            </div>
 
-            {/* Quadra labels */}
-            {quadras.map((q) => {
-              const cx = q.origin.x + (q.cols * q.lotW) / 2;
-              const cy = q.origin.y + (q.rows * q.lotH) / 2;
+            {/* Quadra labels overlay */}
+            {QUADRAS.map((q) => {
+              const inQ = lots.filter((l) => l.quadra === q);
+              if (inQ.length === 0) return null;
+              const cx =
+                inQ.reduce((s, l) => s + l.x + l.w / 2, 0) / inQ.length;
+              const cy =
+                inQ.reduce((s, l) => s + l.y + l.h / 2, 0) / inQ.length;
               return (
-                <g key={q.id} pointerEvents="none">
-                  <text
-                    x={cx}
-                    y={cy + 4}
-                    textAnchor="middle"
-                    fill="#0a1535"
-                    fontSize="13"
-                    fontWeight="600"
-                    fontFamily="var(--font-jakarta)"
-                    style={{ paintOrder: "stroke", stroke: "#faf7f0", strokeWidth: 3, strokeLinejoin: "round" }}
-                  >
-                    {q.id}
-                  </text>
-                </g>
+                <div
+                  key={q}
+                  className="absolute -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                  style={{ left: `${cx * 100}%`, top: `${cy * 100}%` }}
+                >
+                  <span className="px-2 py-0.5 rounded-full bg-[var(--av-navy-950)]/85 text-[var(--av-cream-50)] text-[10px] tracking-[0.2em] uppercase font-medium">
+                    {q}
+                  </span>
+                </div>
               );
             })}
-          </svg>
+          </div>
 
-          {/* Legend */}
-          <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-3 text-xs text-[var(--av-ink-300)]">
-            <Legend swatchClass="bg-[var(--av-lime-500)]" label="Disponível" />
-            <Legend swatchClass="bg-[#f5b73a]" label="Reservado" />
-            <Legend swatchClass="bg-[#6b7187]" label="Vendido" />
-            <span className="ml-auto eyebrow text-[var(--av-ink-500)]">
+          {/* Legend bar */}
+          <div className="px-4 md:px-8 py-5 border-t border-black/10 bg-[var(--av-cream-100)] flex flex-wrap items-center gap-x-8 gap-y-3 text-xs text-[var(--av-navy-900)]">
+            <Legend swatchClass="bg-[var(--av-lime-500)]/60 border-[var(--av-lime-500)]" label="Disponível" />
+            <Legend swatchClass="bg-[#f5b73a]/60 border-[#f5b73a]" label="Reservado" />
+            <Legend swatchClass="bg-[#3c445a]/60 border-[#6b7187]" label="Vendido" />
+            <span className="ml-auto eyebrow text-[var(--av-sand-500)]">
               {counts.available} de {counts.total} disponíveis
             </span>
           </div>
         </div>
       </div>
 
-      {/* Floating hover tooltip */}
+      {/* Hover tooltip */}
       <AnimatePresence>
         {hover && !active && (
           <motion.div
@@ -267,11 +252,8 @@ export function SitePlan({ lots: lotsProp }: Props) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 4 }}
             transition={{ duration: 0.15 }}
-            className="pointer-events-none fixed z-50 px-5 py-4 rounded-2xl bg-[var(--av-cream-50)] text-[var(--av-navy-950)] shadow-2xl min-w-[220px] backdrop-blur"
-            style={{
-              left: pointer.x + 18,
-              top: pointer.y + 18,
-            }}
+            className="pointer-events-none fixed z-50 px-5 py-4 rounded-2xl bg-[var(--av-cream-50)] text-[var(--av-navy-950)] shadow-2xl min-w-[240px]"
+            style={{ left: pointer.x + 18, top: pointer.y + 18 }}
           >
             <div className="eyebrow text-[var(--av-navy-700)]">
               {hover.quadra} · Lote {String(hover.number).padStart(2, "0")}
@@ -280,30 +262,13 @@ export function SitePlan({ lots: lotsProp }: Props) {
               {brl.format(hover.price)}
             </div>
             <div className="mt-3 grid grid-cols-3 gap-2 text-[10px] uppercase tracking-widest text-[var(--av-ink-700)]">
-              <div>
-                <div className="opacity-50">Área</div>
-                <div className="font-medium normal-case text-[var(--av-navy-900)] text-base tracking-normal">
-                  {hover.area} m²
-                </div>
-              </div>
-              <div>
-                <div className="opacity-50">Frente</div>
-                <div className="font-medium normal-case text-[var(--av-navy-900)] text-base tracking-normal">
-                  {hover.frente} m
-                </div>
-              </div>
-              <div>
-                <div className="opacity-50">Fundo</div>
-                <div className="font-medium normal-case text-[var(--av-navy-900)] text-base tracking-normal">
-                  {hover.fundo} m
-                </div>
-              </div>
+              <Field label="Área" value={`${hover.area} m²`} />
+              <Field label="Frente" value={`${hover.frente} m`} />
+              <Field label="Fundo" value={`${hover.fundo} m`} />
             </div>
             <div className="mt-3 text-[10px] uppercase tracking-widest font-medium">
               {hover.status === "available" && (
-                <span className="text-[var(--av-lime-600)]">
-                  Clique para simular ↗
-                </span>
+                <span className="text-[var(--av-lime-600)]">Clique para simular ↗</span>
               )}
               {hover.status === "reserved" && (
                 <span className="text-[#b07a00]">Reservado</span>
@@ -318,19 +283,30 @@ export function SitePlan({ lots: lotsProp }: Props) {
 
       {/* Detail modal */}
       <AnimatePresence>
-        {active && (
-          <LotDetail lot={active} onClose={() => setActive(null)} />
-        )}
+        {active && <LotDetail lot={active} onClose={() => setActive(null)} />}
       </AnimatePresence>
     </section>
   );
 }
 
-function Legend({ swatchClass, label }: { swatchClass: string; label: string }) {
+function Legend({
+  swatchClass, label,
+}: { swatchClass: string; label: string }) {
   return (
     <span className="inline-flex items-center gap-2">
-      <span className={`inline-block h-2.5 w-4 rounded-sm ${swatchClass}`} />
+      <span className={`inline-block h-3 w-5 rounded-sm border ${swatchClass}`} />
       {label}
     </span>
+  );
+}
+
+function Field({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="opacity-50">{label}</div>
+      <div className="font-medium normal-case text-[var(--av-navy-900)] text-base tracking-normal">
+        {value}
+      </div>
+    </div>
   );
 }
