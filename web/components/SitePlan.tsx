@@ -7,13 +7,17 @@ import {
   VIEWBOX,
   LIMITE_TERRENO,
   QUADRAS,
+  POIS,
   brl,
   type Lot,
   type LotStatus,
+  type POI,
 } from "@/lib/lots";
 import { LotDetail } from "./LotDetail";
+import { AreaDetail } from "./AreaDetail";
+import type { AreaPhotos } from "@/lib/photos";
 
-type Props = { lots?: Lot[] };
+type Props = { lots?: Lot[]; areaPhotos?: AreaPhotos };
 
 const STATUS_LABEL: Record<LotStatus, string> = {
   available: "Disponível",
@@ -39,10 +43,12 @@ const STATUS_HOVER: Record<LotStatus, string> = {
   sold: "rgba(107,113,135,0.6)",
 };
 
-export function SitePlan({ lots: lotsProp }: Props) {
+export function SitePlan({ lots: lotsProp, areaPhotos = {} }: Props) {
   const lots = lotsProp ?? initialLots;
   const [hover, setHover] = useState<Lot | null>(null);
+  const [hoverPoi, setHoverPoi] = useState<POI | null>(null);
   const [active, setActive] = useState<Lot | null>(null);
+  const [activePoi, setActivePoi] = useState<POI | null>(null);
   const [pointer, setPointer] = useState({ x: 0, y: 0 });
   const [filter, setFilter] = useState<"all" | LotStatus>("all");
   const [quadraFilter, setQuadraFilter] = useState<string>("all");
@@ -72,6 +78,12 @@ export function SitePlan({ lots: lotsProp }: Props) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [active]);
+
+  const onPoiHover = useCallback((p: POI) => setHoverPoi(p), []);
+  const onPoiLeave = useCallback(
+    (id: string) => setHoverPoi((cur) => (cur?.id === id ? null : cur)),
+    [],
+  );
 
   const onMove = useCallback((e: React.MouseEvent) => {
     setPointer({ x: e.clientX, y: e.clientY });
@@ -271,6 +283,106 @@ export function SitePlan({ lots: lotsProp }: Props) {
                 </text>
               </g>
             ))}
+
+            {/* Points of Interest — common areas */}
+            {POIS.map((p, i) => {
+              const photos = areaPhotos[p.id] ?? [];
+              const hasPhotos = photos.length > 0;
+              return (
+                <g key={p.id}>
+                  {/* pulse ring */}
+                  <circle
+                    cx={p.cx}
+                    cy={p.cy}
+                    r={26}
+                    fill="rgba(165,230,53,0.18)"
+                    pointerEvents="none"
+                  >
+                    <animate
+                      attributeName="r"
+                      values="22;34;22"
+                      dur="2.8s"
+                      repeatCount="indefinite"
+                    />
+                    <animate
+                      attributeName="opacity"
+                      values="0.45;0;0.45"
+                      dur="2.8s"
+                      repeatCount="indefinite"
+                    />
+                  </circle>
+
+                  {/* the clickable blob */}
+                  <motion.polygon
+                    initial={{ opacity: 0, scale: 0.7 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{
+                      duration: 0.6,
+                      delay: 0.5 + i * 0.06,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                    points={p.polygon}
+                    fill="rgba(250,247,240,0.92)"
+                    stroke="rgba(165,230,53,0.95)"
+                    strokeWidth={1.6}
+                    strokeLinejoin="round"
+                    vectorEffect="non-scaling-stroke"
+                    onMouseEnter={() => onPoiHover(p)}
+                    onMouseLeave={() => onPoiLeave(p.id)}
+                    onClick={() => setActivePoi(p)}
+                    style={{
+                      cursor: "pointer",
+                      transformOrigin: `${p.cx}px ${p.cy}px`,
+                      filter:
+                        "drop-shadow(0 0 8px rgba(165,230,53,0.4))",
+                    }}
+                  />
+
+                  {/* icon */}
+                  <g
+                    transform={`translate(${p.cx} ${p.cy})`}
+                    pointerEvents="none"
+                  >
+                    <PoiIcon icon={p.icon} />
+                  </g>
+
+                  {/* label below */}
+                  <text
+                    x={p.cx}
+                    y={p.cy + 32}
+                    textAnchor="middle"
+                    pointerEvents="none"
+                    fontSize="10"
+                    fill="#faf7f0"
+                    fontFamily="var(--font-jakarta)"
+                    fontWeight="600"
+                    letterSpacing="1.5"
+                    style={{
+                      paintOrder: "stroke",
+                      stroke: "#0a1535",
+                      strokeWidth: 3,
+                      strokeLinejoin: "round",
+                    }}
+                  >
+                    {p.label.toUpperCase()}
+                  </text>
+                  {hasPhotos && (
+                    <text
+                      x={p.cx}
+                      y={p.cy + 44}
+                      textAnchor="middle"
+                      pointerEvents="none"
+                      fontSize="7"
+                      fill="#a5e635"
+                      fontFamily="var(--font-jakarta)"
+                      letterSpacing="2"
+                    >
+                      {photos.length} FOTO{photos.length > 1 ? "S" : ""}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
           </svg>
 
           {/* Legend */}
@@ -330,10 +442,98 @@ export function SitePlan({ lots: lotsProp }: Props) {
         )}
       </AnimatePresence>
 
+      {/* POI hover tooltip */}
+      <AnimatePresence>
+        {hoverPoi && !activePoi && !hover && (
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.15 }}
+            className="pointer-events-none fixed z-50 px-5 py-4 rounded-2xl bg-[var(--av-cream-50)] text-[var(--av-navy-950)] shadow-2xl max-w-[280px]"
+            style={{ left: pointer.x + 18, top: pointer.y + 18 }}
+          >
+            <div className="eyebrow text-[var(--av-lime-600)]">Área comum</div>
+            <div className="mt-2 display text-xl leading-tight">{hoverPoi.label}</div>
+            <p className="mt-2 text-xs text-[var(--av-ink-700)] leading-snug">
+              {hoverPoi.description}
+            </p>
+            <div className="mt-3 text-[10px] uppercase tracking-widest font-medium text-[var(--av-lime-600)]">
+              Clique para ver galeria ↗
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {active && <LotDetail lot={active} onClose={() => setActive(null)} />}
       </AnimatePresence>
+
+      <AnimatePresence>
+        {activePoi && (
+          <AreaDetail
+            poi={activePoi}
+            photos={areaPhotos[activePoi.id] ?? []}
+            onClose={() => setActivePoi(null)}
+          />
+        )}
+      </AnimatePresence>
     </section>
+  );
+}
+
+function PoiIcon({ icon }: { icon: POI["icon"] }) {
+  const common = { fill: "none", stroke: "#0a1535", strokeWidth: 1.6, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  if (icon === "sun") {
+    return (
+      <g>
+        <circle r="5" {...common} />
+        {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => (
+          <line
+            key={a}
+            x1={9 * Math.cos((a * Math.PI) / 180)}
+            y1={9 * Math.sin((a * Math.PI) / 180)}
+            x2={13 * Math.cos((a * Math.PI) / 180)}
+            y2={13 * Math.sin((a * Math.PI) / 180)}
+            {...common}
+          />
+        ))}
+      </g>
+    );
+  }
+  if (icon === "ball") {
+    return (
+      <g>
+        <circle r="7.5" {...common} />
+        <path d="M-7.5 0 Q0 -3 7.5 0" {...common} />
+        <path d="M-7.5 0 Q0 3 7.5 0" {...common} />
+        <line x1="0" y1="-7.5" x2="0" y2="7.5" {...common} />
+      </g>
+    );
+  }
+  if (icon === "wave") {
+    return (
+      <g>
+        <path d="M-9 -2 Q-4 -6 0 -2 T9 -2" {...common} />
+        <path d="M-9 3 Q-4 -1 0 3 T9 3" {...common} />
+      </g>
+    );
+  }
+  if (icon === "glass") {
+    return (
+      <g>
+        <path d="M-5 -6 L5 -6 L3 4 L-3 4 Z" {...common} />
+        <line x1="0" y1="4" x2="0" y2="9" {...common} />
+        <line x1="-3" y1="9" x2="3" y2="9" {...common} />
+      </g>
+    );
+  }
+  // tree
+  return (
+    <g>
+      <path d="M0 -10 L7 0 L4 0 L8 5 L4 5 L7 9 L-7 9 L-4 5 L-8 5 L-4 0 L-7 0 Z" {...common} />
+      <line x1="0" y1="9" x2="0" y2="13" {...common} />
+    </g>
   );
 }
 

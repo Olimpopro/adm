@@ -37,6 +37,18 @@ export type Lot = {
 
 export type Quadra = { id: string; cx: number; cy: number };
 
+export type POIIcon = "sun" | "ball" | "wave" | "glass" | "tree";
+
+export type POI = {
+  id: string;
+  label: string;
+  description: string;
+  polygon: string;       // SVG points string
+  cx: number;
+  cy: number;
+  icon: POIIcon;
+};
+
 export const VIEWBOX = sitePlan.viewBox as { w: number; h: number };
 
 export const LIMITE_TERRENO: number[][] = sitePlan.limite;
@@ -98,6 +110,26 @@ export const initialLots: Lot[] = buildLots();
 export const QUADRAS: Quadra[] = Object.entries(sitePlan.quadras).map(
   ([id, c]: [string, { cx: number; cy: number }]) => ({ id, cx: c.cx, cy: c.cy }),
 ).sort((a, b) => a.id.localeCompare(b.id));
+
+type RawPOI = {
+  id: string;
+  label: string;
+  description: string;
+  polygon: number[][];
+  cx: number;
+  cy: number;
+  icon: string;
+};
+
+export const POIS: POI[] = (sitePlan.pois as RawPOI[]).map((p) => ({
+  id: p.id,
+  label: p.label,
+  description: p.description,
+  polygon: p.polygon.map((pt) => `${pt[0]},${pt[1]}`).join(" "),
+  cx: p.cx,
+  cy: p.cy,
+  icon: p.icon as POIIcon,
+}));
 
 export const brl = new Intl.NumberFormat("pt-BR", {
   style: "currency",
