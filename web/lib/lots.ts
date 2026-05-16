@@ -53,6 +53,16 @@ export const VIEWBOX = sitePlan.viewBox as { w: number; h: number };
 
 export const LIMITE_TERRENO: number[][] = sitePlan.limite;
 
+/** Per-quadra outline (union of all lot polygons in that quadra), used to
+ *  draw the urban tissue beneath the lots — so the streets appear as the
+ *  negative space between blocks. */
+export const QUADRA_OUTLINES: Record<string, string> = Object.fromEntries(
+  Object.entries(sitePlan.quadra_outlines).map(([q, pts]) => [
+    q,
+    (pts as number[][]).map((p) => `${p[0]},${p[1]}`).join(" "),
+  ]),
+);
+
 const BASE_PRICE_PER_M2 = 480;
 const PREMIUM_BUMP = 1.18;
 

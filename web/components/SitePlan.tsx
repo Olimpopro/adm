@@ -6,6 +6,7 @@ import {
   initialLots,
   VIEWBOX,
   LIMITE_TERRENO,
+  QUADRA_OUTLINES,
   QUADRAS,
   POIS,
   brl,
@@ -193,9 +194,27 @@ export function SitePlan({ lots: lotsProp, areaPhotos = {} }: Props) {
               </pattern>
             </defs>
 
-            {/* Terrain perimeter */}
+            {/* Terrain perimeter — represents the un-developed area (streets, green space, easements) */}
             <path d={limitePath} fill="url(#grass)" stroke="#4a5687" strokeWidth="0.8" />
             <path d={limitePath} fill="url(#dots)" stroke="none" />
+
+            {/* Quadra blocks — drawn under the lots so the streets appear as
+                the negative space between them. Gives the plan its urban tissue. */}
+            {Object.entries(QUADRA_OUTLINES).map(([q, points], i) => (
+              <motion.polygon
+                key={`block-${q}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.8, delay: 0.1 + i * 0.04 }}
+                points={points}
+                fill="#1a2548"
+                stroke="#3a4673"
+                strokeWidth={0.9}
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+                pointerEvents="none"
+              />
+            ))}
 
             {/* Lots — stagger reveal */}
             {visibleLots.map((lot, i) => (
