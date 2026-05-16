@@ -112,15 +112,17 @@ export function LotDetail({ lot, onClose }: { lot: Lot; onClose: () => void }) {
 
               <dl className="mt-10 grid grid-cols-2 gap-y-6 gap-x-8 text-sm">
                 <Spec label="Área total" value={`${lot.area} m²`} />
+                <Spec label="Perímetro" value={`${lot.perimeter} m`} />
                 <Spec label="Frente" value={`${lot.frente} m`} />
                 <Spec label="Fundo" value={`${lot.fundo} m`} />
                 <Spec label="Quadra" value={lot.quadra} />
+                <Spec label="Status" value={lot.status === "available" ? "Disponível" : "Reservado"} />
                 <Spec
                   label="Valor à vista"
                   value={brl.format(lot.price)}
                   big
                 />
-                <Spec label="Status" value={lot.status === "available" ? "Disponível" : "Reservado"} />
+                <Spec label="Frente para" value={lot.viaFrente || "—"} />
               </dl>
 
               <div className="mt-12 p-5 rounded-2xl bg-[var(--av-navy-900)] border border-[var(--av-navy-800)]">

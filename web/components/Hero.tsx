@@ -144,9 +144,9 @@ export function Hero() {
           transition={{ duration: 1, delay: 1.4 }}
           className="mt-20 md:mt-32 grid grid-cols-2 md:grid-cols-4 gap-px bg-[var(--av-navy-800)] rounded-2xl overflow-hidden border border-[var(--av-navy-800)]"
         >
-          <Stat label="Lotes" value="128" sub="Distribuídos em 11 quadras" />
+          <Stat label="Lotes" value="187" sub="Distribuídos em 11 quadras" />
           <Stat label="Acesso" value="BA-172" sub="Rodovia principal" />
-          <Stat label="Área média" value="312 m²" sub="Frente de 13 m" />
+          <Stat label="Área média" value="402 m²" sub="225 a 738 m²" />
           <Stat label="Entrega" value="2026" sub="Infra. completa" />
         </motion.div>
       </motion.div>
