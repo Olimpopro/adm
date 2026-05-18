@@ -1,15 +1,14 @@
 /**
- * AcquaVille Residencial — exact lot model from the DWG.
+ * AcquaVille Residencial — site plan in image-pixel coordinates.
  *
- * Sourced from the official Civil 3D DWG (CONDOMINIO AGUA VILE_10072025.dwg)
- * via libredwg → dxf → ezdxf, reading each NUMLOTE block's attributes:
- *   - QUADRA, NULOTE, AREALT, PERIME
- *   - MEDFRE / MEDFUN / MEDDIR / MEDESQ (dimensions)
- *   - SITFRE / SITFUN (front/back roads)
- *   - PTX1/PTY1..PTX8/PTY8 (exact polygon vertices)
+ * The base image `web/public/planta-base.jpg` is rendered directly from
+ * the CAD DWG (matplotlib) so lot markers and the image share the exact
+ * same coordinate system — no calibration drift.
  *
- * All coordinates are projected into a stable SVG viewBox (W x H) with the
- * Y axis flipped to match SVG convention.
+ * Data shape (from site-plan.json):
+ *   image: { src, w, h }
+ *   lots[]: { id, quadra, number, area, ..., x, y (pixels), x_frac, y_frac }
+ *   pois[]: { id, label, description, icon, x, y, x_frac, y_frac }
  */
 
 import sitePlan from "./site-plan.json";
@@ -17,25 +16,24 @@ import sitePlan from "./site-plan.json";
 export type LotStatus = "available" | "reserved" | "sold";
 
 export type Lot = {
-  id: string;          // e.g. "Q-01-L01"
-  quadra: string;      // e.g. "Q-01"
+  id: string;
+  quadra: string;
   number: number;
-  area: number;        // m²
-  perimeter: number;   // m
-  frente: number;      // m
-  fundo: number;       // m
+  area: number;
+  perimeter: number;
+  frente: number;
+  fundo: number;
   viaFrente: string;
   viaFundo: string;
-  /** SVG polygon points string, e.g. "505.5,1091.5 495,1064.3 ..." */
-  polygon: string;
-  /** Bounding box of the polygon for tooltip anchoring */
-  cx: number;
-  cy: number;
-  price: number;       // BRL
+  /** Pixel position on the base image */
+  x: number;
+  y: number;
+  /** Fractional position 0..1 (handy when image is resized in the browser) */
+  xFrac: number;
+  yFrac: number;
+  price: number;
   status: LotStatus;
 };
-
-export type Quadra = { id: string; cx: number; cy: number };
 
 export type POIIcon = "sun" | "ball" | "wave" | "glass" | "tree";
 
@@ -43,25 +41,14 @@ export type POI = {
   id: string;
   label: string;
   description: string;
-  polygon: string;       // SVG points string
-  cx: number;
-  cy: number;
   icon: POIIcon;
+  x: number;
+  y: number;
+  xFrac: number;
+  yFrac: number;
 };
 
-export const VIEWBOX = sitePlan.viewBox as { w: number; h: number };
-
-export const LIMITE_TERRENO: number[][] = sitePlan.limite;
-
-/** Per-quadra outline (union of all lot polygons in that quadra), used to
- *  draw the urban tissue beneath the lots — so the streets appear as the
- *  negative space between blocks. */
-export const QUADRA_OUTLINES: Record<string, string> = Object.fromEntries(
-  Object.entries(sitePlan.quadra_outlines).map(([q, pts]) => [
-    q,
-    (pts as number[][]).map((p) => `${p[0]},${p[1]}`).join(" "),
-  ]),
-);
+export const IMAGE = sitePlan.image as { src: string; w: number; h: number };
 
 const BASE_PRICE_PER_M2 = 480;
 const PREMIUM_BUMP = 1.18;
@@ -79,67 +66,57 @@ function pickStatus(seed: number): LotStatus {
 }
 
 type RawLot = (typeof sitePlan.lots)[number];
+type RawPOI = (typeof sitePlan.pois)[number];
 
 function isCorner(lot: RawLot): boolean {
-  // Premium: corner lots and lots facing the highway / common areas
-  const street = (lot.via_frente ?? "").toLowerCase();
+  const street = (lot.viaFrente ?? "").toLowerCase();
   return (
     street.includes("juraci") ||
     street.includes("área de lazer") ||
     street.includes("rotunda") ||
-    lot.frente_m >= 14
+    (lot.frente ?? 0) >= 14
   );
 }
 
-function buildLots(): Lot[] {
-  return sitePlan.lots.map((d: RawLot, i: number) => {
-    const seed = i * 11 + 7;
-    const corner = isCorner(d);
-    const price = Math.round((d.area * BASE_PRICE_PER_M2 * (corner ? PREMIUM_BUMP : 1)) / 1000) * 1000;
-    return {
-      id: d.id,
-      quadra: d.quadra,
-      number: d.number,
-      area: d.area,
-      perimeter: d.perimeter,
-      frente: d.frente_m,
-      fundo: d.fundo_m,
-      viaFrente: d.via_frente,
-      viaFundo: d.via_fundo,
-      polygon: d.polygon.map((p: number[]) => `${p[0]},${p[1]}`).join(" "),
-      cx: d.cx,
-      cy: d.cy,
-      price,
-      status: pickStatus(seed),
-    } satisfies Lot;
-  });
-}
-
-export const initialLots: Lot[] = buildLots();
-
-export const QUADRAS: Quadra[] = Object.entries(sitePlan.quadras).map(
-  ([id, c]: [string, { cx: number; cy: number }]) => ({ id, cx: c.cx, cy: c.cy }),
-).sort((a, b) => a.id.localeCompare(b.id));
-
-type RawPOI = {
-  id: string;
-  label: string;
-  description: string;
-  polygon: number[][];
-  cx: number;
-  cy: number;
-  icon: string;
-};
+export const initialLots: Lot[] = (sitePlan.lots as RawLot[]).map((d, i) => {
+  const seed = i * 11 + 7;
+  const corner = isCorner(d);
+  const price = Math.round(
+    (d.area * BASE_PRICE_PER_M2 * (corner ? PREMIUM_BUMP : 1)) / 1000,
+  ) * 1000;
+  return {
+    id: d.id,
+    quadra: d.quadra,
+    number: d.number,
+    area: d.area,
+    perimeter: d.perimeter,
+    frente: d.frente,
+    fundo: d.fundo,
+    viaFrente: d.viaFrente,
+    viaFundo: d.viaFundo,
+    x: d.x,
+    y: d.y,
+    xFrac: d.x_frac,
+    yFrac: d.y_frac,
+    price,
+    status: pickStatus(seed),
+  } satisfies Lot;
+});
 
 export const POIS: POI[] = (sitePlan.pois as RawPOI[]).map((p) => ({
   id: p.id,
   label: p.label,
   description: p.description,
-  polygon: p.polygon.map((pt) => `${pt[0]},${pt[1]}`).join(" "),
-  cx: p.cx,
-  cy: p.cy,
   icon: p.icon as POIIcon,
+  x: p.x,
+  y: p.y,
+  xFrac: p.x_frac,
+  yFrac: p.y_frac,
 }));
+
+export const QUADRAS: string[] = Array.from(
+  new Set(initialLots.map((l) => l.quadra)),
+).sort();
 
 export const brl = new Intl.NumberFormat("pt-BR", {
   style: "currency",

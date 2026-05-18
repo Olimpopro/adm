@@ -1,5 +1,5 @@
 import { Hero } from "@/components/Hero";
-import { SitePlan } from "@/components/SitePlan";
+import { MapPlanLoader } from "@/components/MapPlanLoader";
 import { Features } from "@/components/Features";
 import { Location } from "@/components/Location";
 import { Contact } from "@/components/Contact";
@@ -21,7 +21,7 @@ export default async function Page() {
       <SmoothScroll />
       <main className="flex-1">
         <Hero />
-        <SitePlan lots={lots} areaPhotos={areaPhotos} />
+        <MapPlanLoader lots={lots} areaPhotos={areaPhotos} />
         <Features />
         <Location />
         <Contact />

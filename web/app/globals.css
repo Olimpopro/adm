@@ -224,3 +224,225 @@ html.lenis body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ============================================================
+   LEAFLET MAP — AcquaVille theme
+   ============================================================ */
+
+/* Map container background */
+.leaflet-container {
+  background: var(--av-navy-950);
+  font-family: var(--font-jakarta), sans-serif;
+  outline: none;
+}
+
+.av-planta-image {
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* Zoom controls — restyle in brand colors */
+.leaflet-bar {
+  border: none !important;
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.6) !important;
+  background: transparent !important;
+}
+.leaflet-bar a,
+.leaflet-bar a:hover {
+  background: var(--av-navy-900) !important;
+  color: var(--av-cream-50) !important;
+  border: 1px solid var(--av-navy-800) !important;
+  border-bottom: 0 !important;
+  width: 38px !important;
+  height: 38px !important;
+  line-height: 36px !important;
+  font-size: 18px !important;
+  font-weight: 300 !important;
+  transition: all 0.2s ease;
+}
+.leaflet-bar a:last-child {
+  border-bottom: 1px solid var(--av-navy-800) !important;
+}
+.leaflet-bar a:first-child {
+  border-top-left-radius: 12px !important;
+  border-top-right-radius: 12px !important;
+}
+.leaflet-bar a:last-child {
+  border-bottom-left-radius: 12px !important;
+  border-bottom-right-radius: 12px !important;
+}
+.leaflet-bar a:hover {
+  background: var(--av-lime-500) !important;
+  color: var(--av-navy-950) !important;
+}
+
+/* ---------- LOT marker ---------- */
+.av-lot-marker {
+  background: transparent !important;
+  border: none !important;
+}
+.av-lot-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-jakarta), sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  border: 1.5px solid rgba(10, 21, 53, 0.5);
+  box-shadow:
+    0 0 0 2px rgba(250, 247, 240, 0.18),
+    0 4px 10px -2px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+  padding: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.av-lot-pill:hover:not([disabled]) {
+  transform: scale(1.35);
+  box-shadow:
+    0 0 0 3px rgba(165, 230, 53, 0.5),
+    0 6px 18px -2px rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+}
+.av-lot-pill[data-status="sold"] {
+  filter: grayscale(0.35) brightness(0.85);
+  cursor: not-allowed;
+}
+.av-lot-pill[disabled] {
+  cursor: not-allowed;
+}
+
+/* ---------- POI marker ---------- */
+.av-poi-marker {
+  background: transparent !important;
+  border: none !important;
+}
+.av-poi-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--av-cream-50);
+  color: var(--av-navy-950);
+  cursor: pointer;
+  box-shadow:
+    0 0 0 4px rgba(165, 230, 53, 0.35),
+    0 8px 22px -4px rgba(0, 0, 0, 0.6);
+  border: 2px solid var(--av-lime-400);
+  padding: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  animation: av-poi-pulse 2.6s ease-in-out infinite;
+}
+@keyframes av-poi-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(165, 230, 53, 0.35), 0 8px 22px -4px rgba(0, 0, 0, 0.6); }
+  50%      { box-shadow: 0 0 0 12px rgba(165, 230, 53, 0.0), 0 8px 22px -4px rgba(0, 0, 0, 0.6); }
+}
+.av-poi-pill:hover {
+  transform: scale(1.08);
+}
+.av-poi-label {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-family: var(--font-jakarta), sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--av-cream-50);
+  text-shadow:
+    -1px -1px 0 #0a1535,
+    1px -1px 0 #0a1535,
+    -1px 1px 0 #0a1535,
+    1px 1px 0 #0a1535;
+}
+.av-poi-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: var(--av-lime-500);
+  color: var(--av-navy-950);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 4px 6px;
+  border-radius: 999px;
+  border: 1.5px solid var(--av-navy-950);
+}
+
+/* ---------- Tooltip ---------- */
+.av-tooltip {
+  background: var(--av-cream-50) !important;
+  color: var(--av-navy-950) !important;
+  border: none !important;
+  border-radius: 16px !important;
+  box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.55) !important;
+  padding: 14px 16px !important;
+  white-space: normal !important;
+  max-width: 260px;
+  font-family: var(--font-jakarta), sans-serif;
+}
+.av-tooltip::before {
+  border-top-color: var(--av-cream-50) !important;
+}
+.av-tip-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--av-navy-700);
+  margin-bottom: 8px;
+}
+.av-tip-price {
+  font-family: var(--font-fraunces), serif;
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+}
+.av-tip-grid {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 4px 14px;
+  margin-top: 10px;
+  font-size: 11px;
+}
+.av-tip-grid span {
+  color: var(--av-ink-500);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 9px;
+}
+.av-tip-grid b {
+  color: var(--av-navy-900);
+  font-weight: 600;
+}
+.av-tip-street {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--av-ink-700);
+}
+.av-tip-street b {
+  color: var(--av-navy-900);
+}
+.av-tip-cta {
+  margin-top: 10px;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.av-tip-cta[data-status="available"] { color: var(--av-lime-600); }
+.av-tip-cta[data-status="reserved"]  { color: #b07a00; }
+.av-tip-cta[data-status="sold"]      { color: var(--av-ink-500); }
