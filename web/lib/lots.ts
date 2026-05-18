@@ -2,13 +2,8 @@
  * AcquaVille Residencial — site plan in image-pixel coordinates.
  *
  * The base image `web/public/planta-base.jpg` is rendered directly from
- * the CAD DWG (matplotlib) so lot markers and the image share the exact
- * same coordinate system — no calibration drift.
- *
- * Data shape (from site-plan.json):
- *   image: { src, w, h }
- *   lots[]: { id, quadra, number, area, ..., x, y (pixels), x_frac, y_frac }
- *   pois[]: { id, label, description, icon, x, y, x_frac, y_frac }
+ * the CAD DWG (matplotlib) using the SAME projection as the markers.
+ * Result: zero alignment drift between background and clickable lots.
  */
 
 import sitePlan from "./site-plan.json";
@@ -25,10 +20,8 @@ export type Lot = {
   fundo: number;
   viaFrente: string;
   viaFundo: string;
-  /** Pixel position on the base image */
-  x: number;
+  x: number;          // pixel position on the base image
   y: number;
-  /** Fractional position 0..1 (handy when image is resized in the browser) */
   xFrac: number;
   yFrac: number;
   price: number;

@@ -29,13 +29,7 @@ const STATUS_LABEL: Record<LotStatus, string> = {
 const STATUS_BG: Record<LotStatus, string> = {
   available: "#a5e635",
   reserved: "#f5b73a",
-  sold: "#6b7187",
-};
-
-const STATUS_TEXT: Record<LotStatus, string> = {
-  available: "#0a1535",
-  reserved: "#0a1535",
-  sold: "#0a1535",
+  sold: "#9aa0b3",
 };
 
 export function MapPlan({ lots: lotsProp, areaPhotos = {} }: Props) {
@@ -61,7 +55,6 @@ export function MapPlan({ lots: lotsProp, areaPhotos = {} }: Props) {
     [lots],
   );
 
-  /** Initialize the Leaflet map once. */
   useEffect(() => {
     if (!mapDivRef.current || mapRef.current) return;
 
@@ -84,21 +77,14 @@ export function MapPlan({ lots: lotsProp, areaPhotos = {} }: Props) {
         [IMAGE.h * 1.15, IMAGE.w * 1.15],
       ],
       maxBoundsViscosity: 0.85,
-      preferCanvas: false,
     });
-
     map.zoomControl.setPosition("bottomright");
 
-    L.imageOverlay(IMAGE.src, bounds, {
-      interactive: false,
-      className: "av-planta-image",
-    }).addTo(map);
-
+    L.imageOverlay(IMAGE.src, bounds, { interactive: false }).addTo(map);
     map.fitBounds(bounds, { padding: [20, 20] });
 
     lotLayerRef.current = L.layerGroup().addTo(map);
     poiLayerRef.current = L.layerGroup().addTo(map);
-
     mapRef.current = map;
 
     return () => {
@@ -107,12 +93,10 @@ export function MapPlan({ lots: lotsProp, areaPhotos = {} }: Props) {
     };
   }, []);
 
-  /** Render lot markers whenever data/filters change. */
   useEffect(() => {
     const map = mapRef.current;
     const layer = lotLayerRef.current;
     if (!map || !layer) return;
-
     layer.clearLayers();
 
     lots.forEach((lot) => {
@@ -122,26 +106,22 @@ export function MapPlan({ lots: lotsProp, areaPhotos = {} }: Props) {
       if (!visible) return;
 
       const bg = STATUS_BG[lot.status];
-      const fg = STATUS_TEXT[lot.status];
-      const isDisabled = lot.status === "sold";
+      const disabled = lot.status === "sold";
 
       const icon = L.divIcon({
         className: "av-lot-marker",
-        html: `<button
-                 class="av-lot-pill"
-                 data-status="${lot.status}"
-                 ${isDisabled ? "disabled" : ""}
-                 style="--bg:${bg};--fg:${fg};"
+        html: `<button class="av-lot-pill" data-status="${lot.status}"
+                 ${disabled ? "disabled" : ""}
+                 style="--bg:${bg};"
                  aria-label="Lote ${lot.id} — ${STATUS_LABEL[lot.status]}"
                >${lot.number}</button>`,
-        iconSize: [26, 26],
-        iconAnchor: [13, 13],
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
       });
 
-      // Leaflet uses [lat, lng] which here means [y, x] in our image CRS.
       const marker = L.marker([IMAGE.h - lot.y, lot.x], {
         icon,
-        keyboard: !isDisabled,
+        keyboard: !disabled,
         riseOnHover: true,
         bubblingMouseEvents: false,
       });
@@ -155,42 +135,27 @@ export function MapPlan({ lots: lotsProp, areaPhotos = {} }: Props) {
             <span>Frente</span><b>${lot.frente} m</b>
             <span>Fundo</span><b>${lot.fundo} m</b>
           </div>
-          ${
-            lot.viaFrente
-              ? `<div class="av-tip-street">Frente para <b>${escapeHtml(lot.viaFrente)}</b></div>`
-              : ""
-          }
+          ${lot.viaFrente
+            ? `<div class="av-tip-street">Frente para <b>${escapeHtml(lot.viaFrente)}</b></div>`
+            : ""}
           <div class="av-tip-cta" data-status="${lot.status}">
-            ${
-              lot.status === "available"
-                ? "Toque para simular"
-                : lot.status === "reserved"
-                  ? "Reservado"
-                  : "Vendido"
-            }
+            ${lot.status === "available" ? "Toque para simular" :
+              lot.status === "reserved" ? "Reservado" : "Vendido"}
           </div>
         </div>`;
       marker.bindTooltip(tooltip, {
-        direction: "top",
-        offset: [0, -8],
-        opacity: 1,
-        className: "av-tooltip",
+        direction: "top", offset: [0, -8], opacity: 1, className: "av-tooltip",
       });
 
-      if (!isDisabled) {
-        marker.on("click", () => setActiveLot(lot));
-      }
-
+      if (!disabled) marker.on("click", () => setActiveLot(lot));
       marker.addTo(layer);
     });
   }, [lots, filter, quadraFilter]);
 
-  /** Render POI markers. */
   useEffect(() => {
     const map = mapRef.current;
     const layer = poiLayerRef.current;
     if (!map || !layer) return;
-
     layer.clearLayers();
 
     POIS.forEach((p) => {
@@ -202,20 +167,15 @@ export function MapPlan({ lots: lotsProp, areaPhotos = {} }: Props) {
                  <span class="av-poi-label">${escapeHtml(p.label)}</span>
                  ${photos.length ? `<span class="av-poi-count">${photos.length}</span>` : ""}
                </button>`,
-        iconSize: [60, 60],
-        iconAnchor: [30, 30],
+        iconSize: [54, 54],
+        iconAnchor: [27, 27],
       });
-
-      const marker = L.marker([IMAGE.h - p.y, p.x], {
-        icon,
-        zIndexOffset: 200,
-      });
+      const marker = L.marker([IMAGE.h - p.y, p.x], { icon, zIndexOffset: 200 });
       marker.on("click", () => setActivePoi(p));
       marker.addTo(layer);
     });
   }, [areaPhotos]);
 
-  /** Center on a quadra when filter changes. */
   useEffect(() => {
     const map = mapRef.current;
     if (!map || quadraFilter === "all") return;
@@ -223,10 +183,8 @@ export function MapPlan({ lots: lotsProp, areaPhotos = {} }: Props) {
     if (inQ.length === 0) return;
     const xs = inQ.map((l) => l.x);
     const ys = inQ.map((l) => l.y);
-    const minX = Math.min(...xs);
-    const maxX = Math.max(...xs);
-    const minY = Math.min(...ys);
-    const maxY = Math.max(...ys);
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
     const pad = 60;
     map.flyToBounds(
       [
@@ -263,62 +221,47 @@ export function MapPlan({ lots: lotsProp, areaPhotos = {} }: Props) {
               real — toque pra ver os dados e simular sua compra.
             </p>
           </div>
-
           <div className="flex flex-wrap gap-2">
             {(["all", "available", "reserved", "sold"] as const).map((k) => (
-              <button
-                key={k}
-                onClick={() => setFilter(k)}
+              <button key={k} onClick={() => setFilter(k)}
                 className={`px-4 py-2.5 rounded-full text-xs uppercase tracking-[0.18em] border transition-all ${
                   filter === k
                     ? "bg-[var(--av-lime-400)] border-[var(--av-lime-400)] text-[var(--av-navy-950)]"
                     : "border-[var(--av-ink-700)] text-[var(--av-ink-300)] hover:border-[var(--av-lime-400)] hover:text-[var(--av-lime-400)]"
-                }`}
-              >
-                {k === "all"
-                  ? `Todos · ${counts.total}`
-                  : `${STATUS_LABEL[k]} · ${counts[k]}`}
+                }`}>
+                {k === "all" ? `Todos · ${counts.total}` : `${STATUS_LABEL[k]} · ${counts[k]}`}
               </button>
             ))}
           </div>
         </div>
 
         <div className="flex flex-wrap gap-1.5 mb-4">
-          <button
-            onClick={() => setQuadraFilter("all")}
+          <button onClick={() => setQuadraFilter("all")}
             className={`px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.18em] transition-colors ${
               quadraFilter === "all"
                 ? "bg-[var(--av-cream-50)] text-[var(--av-navy-950)]"
                 : "bg-[var(--av-navy-900)] text-[var(--av-ink-300)] hover:text-[var(--av-cream-50)]"
-            }`}
-          >
+            }`}>
             Todas as quadras
           </button>
           {QUADRAS.map((q) => (
-            <button
-              key={q}
-              onClick={() => setQuadraFilter(quadraFilter === q ? "all" : q)}
+            <button key={q} onClick={() => setQuadraFilter(quadraFilter === q ? "all" : q)}
               className={`px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.18em] transition-colors ${
                 quadraFilter === q
                   ? "bg-[var(--av-cream-50)] text-[var(--av-navy-950)]"
                   : "bg-[var(--av-navy-900)] text-[var(--av-ink-300)] hover:text-[var(--av-cream-50)]"
-              }`}
-            >
+              }`}>
               {q}
             </button>
           ))}
         </div>
 
-        <div className="relative rounded-3xl border border-[var(--av-navy-800)] bg-[var(--av-navy-950)] overflow-hidden shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)]">
-          <div
-            ref={mapDivRef}
-            className="w-full"
-            style={{ height: "min(78vh, 820px)" }}
-          />
+        <div className="relative rounded-3xl border border-[var(--av-navy-800)] bg-[var(--av-cream-100)] overflow-hidden shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)]">
+          <div ref={mapDivRef} className="w-full" style={{ height: "min(78vh, 820px)" }} />
           <div className="px-4 md:px-8 py-4 border-t border-[var(--av-navy-800)] bg-[var(--av-navy-900)] flex flex-wrap items-center gap-x-8 gap-y-3 text-xs text-[var(--av-ink-300)]">
             <Legend bg="#a5e635" label={`Disponível · ${counts.available}`} />
             <Legend bg="#f5b73a" label={`Reservado · ${counts.reserved}`} />
-            <Legend bg="#6b7187" label={`Vendido · ${counts.sold}`} />
+            <Legend bg="#9aa0b3" label={`Vendido · ${counts.sold}`} />
             <span className="ml-auto eyebrow text-[var(--av-lime-400)] hidden md:inline">
               Arraste · Pinça pra zoom
             </span>
@@ -345,61 +288,50 @@ export function MapPlan({ lots: lotsProp, areaPhotos = {} }: Props) {
 function Legend({ bg, label }: { bg: string; label: string }) {
   return (
     <span className="inline-flex items-center gap-2">
-      <span
-        className="inline-block h-3 w-3 rounded-full border border-[var(--av-navy-900)] shadow-[0_0_0_1.5px_rgba(255,255,255,0.4)]"
-        style={{ background: bg }}
-      />
+      <span className="inline-block h-3 w-3 rounded-full border border-[var(--av-navy-900)]"
+        style={{ background: bg, boxShadow: "0 0 0 1.5px rgba(255,255,255,0.45)" }} />
       {label}
     </span>
   );
 }
 
 function escapeHtml(s: string) {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
 function poiSvg(icon: POI["icon"]): string {
   const stroke = "stroke='#0a1535' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'";
   if (icon === "sun") {
-    return `<svg viewBox='-15 -15 30 30' width='22' height='22'>
+    return `<svg viewBox='-15 -15 30 30' width='20' height='20'>
       <circle r='5' ${stroke} />
       <g ${stroke}>
-        ${[0, 45, 90, 135, 180, 225, 270, 315]
-          .map((a) => {
-            const r1 = 9,
-              r2 = 13;
-            const x1 = r1 * Math.cos((a * Math.PI) / 180);
-            const y1 = r1 * Math.sin((a * Math.PI) / 180);
-            const x2 = r2 * Math.cos((a * Math.PI) / 180);
-            const y2 = r2 * Math.sin((a * Math.PI) / 180);
-            return `<line x1='${x1}' y1='${y1}' x2='${x2}' y2='${y2}' />`;
-          })
-          .join("")}
+        ${[0,45,90,135,180,225,270,315].map(a => {
+          const r1 = 9, r2 = 13;
+          const x1 = r1*Math.cos(a*Math.PI/180), y1 = r1*Math.sin(a*Math.PI/180);
+          const x2 = r2*Math.cos(a*Math.PI/180), y2 = r2*Math.sin(a*Math.PI/180);
+          return `<line x1='${x1}' y1='${y1}' x2='${x2}' y2='${y2}' />`;
+        }).join("")}
       </g></svg>`;
   }
   if (icon === "ball") {
-    return `<svg viewBox='-12 -12 24 24' width='22' height='22'>
+    return `<svg viewBox='-12 -12 24 24' width='20' height='20'>
       <circle r='7.5' ${stroke} />
       <path d='M-7.5 0 Q0 -3 7.5 0' ${stroke} />
       <path d='M-7.5 0 Q0 3 7.5 0' ${stroke} />
       <line x1='0' y1='-7.5' x2='0' y2='7.5' ${stroke} /></svg>`;
   }
   if (icon === "wave") {
-    return `<svg viewBox='-12 -12 24 24' width='22' height='22'>
+    return `<svg viewBox='-12 -12 24 24' width='20' height='20'>
       <path d='M-9 -2 Q-4 -6 0 -2 T9 -2' ${stroke} />
       <path d='M-9 3 Q-4 -1 0 3 T9 3' ${stroke} /></svg>`;
   }
   if (icon === "glass") {
-    return `<svg viewBox='-10 -10 20 20' width='22' height='22'>
+    return `<svg viewBox='-10 -10 20 20' width='20' height='20'>
       <path d='M-5 -6 L5 -6 L3 4 L-3 4 Z' ${stroke} />
       <line x1='0' y1='4' x2='0' y2='9' ${stroke} />
       <line x1='-3' y1='9' x2='3' y2='9' ${stroke} /></svg>`;
   }
-  return `<svg viewBox='-12 -14 24 28' width='22' height='22'>
+  return `<svg viewBox='-12 -14 24 28' width='20' height='20'>
     <path d='M0 -10 L7 0 L4 0 L8 5 L4 5 L7 9 L-7 9 L-4 5 L-8 5 L-4 0 L-7 0 Z' ${stroke} />
     <line x1='0' y1='9' x2='0' y2='13' ${stroke} /></svg>`;
 }

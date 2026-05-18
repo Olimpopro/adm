@@ -4,7 +4,6 @@ import dynamic from "next/dynamic";
 import type { ComponentProps } from "react";
 import type { MapPlan as MapPlanT } from "./MapPlan";
 
-// Leaflet touches `window` on import, so we render this only client-side.
 const MapPlan = dynamic(
   () => import("./MapPlan").then((m) => m.MapPlan),
   {
